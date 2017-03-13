@@ -11,11 +11,60 @@ include_once "jr_file.php";
 <link href="dropzone/dropzone.css" type="text/css" rel="stylesheet" />
 <!-- 2 -->
 <script src="dropzone/dropzone.js"></script>
+
 </head><body>
 <h2> Download Area</h2>
 Drag and drop the files below:
 <!-- 3 -->
-<form action="upload.php" class="dropzone"></form>
+<form action="upload.php" id="my-dropzone" class="dropzone"></form>
+<script>
+//myDropzone.on("complete", function(file) {
+//});
+
+Dropzone.options.myDropzone = {
+  init: function() {
+		/*
+    this.on("success", function(file, responseText) {
+      // Handle the responseText here. For example, add the text to the preview element:
+      //file.previewTemplate.appendChild(document.createTextNode(responseText));
+      //myDropzone.removeFile(file);
+			//location.reload(true);
+
+    });
+    */
+    this.on("queuecomplete", function() {
+ 			location.reload(true);
+    });
+    /*
+    this.on("addedfile", function(file) {
+
+        // Create the remove button
+        var removeButton = Dropzone.createElement("<button>Remove file</button>");
+
+
+        // Capture the Dropzone instance as closure.
+        var _this = this;
+
+        // Listen to the click event
+        removeButton.addEventListener("click", function(e) {
+          // Make sure the button click doesn't submit the form:
+          e.preventDefault();
+          e.stopPropagation();
+
+          // Remove the file preview.
+          _this.removeFile(file);
+          // If you want to the delete the file on the server as well,
+          // you can do the AJAX request here.
+        });
+
+        // Add the button to the file preview element.
+        file.previewElement.appendChild(removeButton);
+      });
+    */
+    
+  }
+};
+</script>
 <!-- 
 <h2><a href="delete.php" onclick="if (!confirm('Are you sure to erase ALL uploaded files?')) return false;">erase files</a></h2>
 3 -->
@@ -49,8 +98,8 @@ foreach ($a as $a1) {
 <a href="index.php">Refresh uploaded</a>
 </td><td>
 <h2>DB management</h2>
-<a href="erase.php?tym" onclick="if (!confirm('Are you sure to erase ALL data from DB?')) return false;">Clear For Anayze</a><br />
-<a href="erase.php?pel" onclick="if (!confirm('Are you sure to erase ALL data from DB?')) return false;">Clear Parsed</a><br />
+<a href="erase.php?tym" onclick="if (!confirm('Are you sure to erase ALL analyzed data from DB?')) return false;">Clear For Anayze</a><br />
+<a href="erase.php?pel" onclick="if (!confirm('Are you sure to erase ALL parsed data from DB?')) return false;">Clear Parsed</a><br />
 <a href="erase.php?vac">Force Vacuum</a>
 </td><td>
 
@@ -66,9 +115,19 @@ do: <input type='text' name='do_km' /> <br />
 </form>
 </td><td>
 <h2>Data Output</h2>
+<a href="xls.php?avg">AVG XLS</a><hr />
 <a href="pivot.php?avg">Average</a><br />
 <a href="pivot.php?tch">TCH</a><br />
-<a href="pivot.php?bcch">BCCH</a><br />
+<a href="pivot.php?bcch">BCCH</a><hr />
+<a href="xls.php?tymc">ALL analyzes CSV (warning can be BIG)</a><br />
+<a href="xls.php?allc">ALL parsed CSV (warning can be very BIG)</a><br />
+<!--
+!!! XLS generatino can take some time...
+<a href="xls.php?tym">ALL analyzes XLS (warning can be BIG)</a><br />
+<a href="xls.php?all">ALL parsed XLS (warning can be very BIG)</a><br />
+-->
+
+
 
 </td></tr></table>
 <pre>

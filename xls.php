@@ -2,6 +2,14 @@
 // http://stackoverflow.com/questions/25628205/is-it-possible-to-generate-or-clone-pivot-tables-using-phpexcel-library
 
 
+error_reporting(E_ALL & ~E_DEPRECATED & ~E_STRICT & ~E_NOTICE);
+function jr_p($text) {
+//ob_end_clean();
+print $text."<br />\n";@flush();@ob_end_flush();
+//ob_start();
+}
+
+
 header( 'Content-type: text/html; charset=utf-8' );
 include_once ("db.php");
 require_once 'PHPExcel.php';
@@ -83,11 +91,26 @@ function jr_xls_read($file_name,$worksheets=array()) {
   return ($w);
 }
 
-function sheet($name,$arrayData) {
+function sheet($name,$arrayData,$csv=0) {
 	global $phpXls;
+	
+//	$csv=";";
+	
+	if (!is_array($arrayData) || !$arrayData ) {
+		$arrayData=array( 0=>array('blad'=>'danych'));
+	}
 
+	if ($csv) {
+		$l="\"";
+		$a="";
+		$a.=$l.join ($l.$csv.$l,array_keys($arrayData[0])).$l;
+		foreach($arrayData as $b) $a.="\n".$l.join ($l.$csv.$l,$b).$l;
+		return $a;
+	}
+	
 	$wk=new PHPExcel_Worksheet($phpXls, $name);
 	$phpXls->addSheet($wk, 0);
+	
 	$phpXls->setActiveSheetIndex(0);
 	$phpXls->getActiveSheet()
 		->fromArray(
@@ -144,63 +167,124 @@ function sheet($name,$arrayData) {
 			for ($j=1;$j<=count($arrayData)+1;$j++)
 				$phpXls->getActiveSheet()->getStyle(xls_cell($i,$j))->applyFromArray($styleArray);
 
-    print "<pre>".count($arrayData)." ".count($arrayData[0])."\n\n";
+//    print "<pre>".count($arrayData)." ".count($arrayData[0])."\n\n";
 //    print "<pre>".'A1:'.cell(count($arrayData[0]),count($$arrayData));print_r($arrayData);
 }
 
-$recordset=sq_query("SELECT * FROM avg_tch");
-sheet("avg_tch",$recordset);
-$recordset=sq_query("SELECT * FROM avg_bcch");
-sheet("avg_bcch",$recordset);
-$recordset=sq_query("SELECT * FROM avg_session");
-sheet("avg_session",$recordset);
-$recordset=sq_query("SELECT * FROM avg_session_bcch");
-sheet("avg_session_bcch",$recordset);
-$recordset=sq_query("SELECT * FROM avg_session_tch");
-sheet("avg_session_tch",$recordset);
+if (isset($_SERVER["QUERY_STRING"])) {
+	if ($_SERVER["QUERY_STRING"]=="avg") {
+		print "<h2>aaAverage and other data generation from Analyzed data</h2>";		@flush();@ob_end_flush();
+
+//		ob_start();
+		$recordset=sq_query("SELECT * FROM avg_tch");
+		sheet("avg_tch",$recordset);
+		jr_p("avg_tch");
+		
+		$recordset=sq_query("SELECT * FROM avg_bcch");
+		sheet("avg_bcch",$recordset);
+		jr_p("avg_bcch");
+		
+		$recordset=sq_query("SELECT * FROM avg_session");
+		sheet("avg_session",$recordset);
+		jr_p("avg_session");
+		
+		$recordset=sq_query("SELECT * FROM avg_session_bcch");
+		sheet("avg_session_bcch",$recordset);
+		jr_p("avg_session_bcch");
+		
+		$recordset=sq_query("SELECT * FROM avg_session_tch");
+		sheet("avg_session_tch",$recordset);
+		jr_p("avg_session_tch");
+
+		
+		$recordset=sq_query("SELECT * FROM per_rxqual_tch");
+		$data = Pivot::factory($recordset)
+			->pivotOn(array('cab','tch'))
+			->addColumn(array('rxqual'), array('ile'))
+			->fullTotal()
+			->lineTotal()
+
+			->fetch();
+		sheet("per_rxqual_tch",$data);
+		jr_p("per_rxqual_tch");
+
+		$recordset=sq_query("SELECT * FROM per_rxqual_bcch");
+		$data = Pivot::factory($recordset)
+			->pivotOn(array('cab','bcch'))
+			->addColumn(array('rxqual'), array('ile'))
+			->fullTotal()
+			->lineTotal()
+			->fetch();
+		sheet("per_rxqual_bcch",$data);
+		jr_p("per_rxqual_bcch");
 
 
-	$recordset=sq_query("SELECT * FROM per_rxqual_tch");
-	$data = Pivot::factory($recordset)
-    ->pivotOn(array('cab','tch'))
-    ->addColumn(array('rxqual'), array('ile'))
-		->fullTotal()
-    ->lineTotal()
+		$recordset=sq_query("SELECT * FROM session_rxqual_bcch");
+		$data = Pivot::factory($recordset)
+			->pivotOn(array('cab','session','bcch'))
+			->addColumn(array('rxqual'), array('ile'))
+			->fullTotal()
+			->lineTotal()
+			->fetch();
+		sheet("session_rxqual_bcch",$data);
+		jr_p("session_rxqual_bcch");
+			
+		$recordset=sq_query("SELECT * FROM session_rxqual_tch");
+		$data = Pivot::factory($recordset)
+			->pivotOn(array('cab','session','tch'))
+			->addColumn(array('rxqual'), array('ile'))
+			->fullTotal()
+			->lineTotal()
 
-    ->fetch();
-	sheet("per_rxqual_tch",$data);
+			->fetch();  
+		sheet("session_rxqual_tch",$data);
+		jr_p("session_rxqual_tch");
+			
+//		ob_end_clean();
 
-	$recordset=sq_query("SELECT * FROM per_rxqual_bcch");
-	$data = Pivot::factory($recordset)
-    ->pivotOn(array('cab','bcch'))
-    ->addColumn(array('rxqual'), array('ile'))
-		->fullTotal()
-    ->lineTotal()
-    ->fetch();
-	sheet("per_rxqual_bcch",$data);
+		print "<a href='db\dupa.xlsx'> open AVG excel file</a>";
+		jr_xls_save($phpXls,'db\dupa.xlsx');
 
-	$recordset=sq_query("SELECT * FROM session_rxqual_bcch");
-	$data = Pivot::factory($recordset)
-    ->pivotOn(array('cab','session','bcch'))
-    ->addColumn(array('rxqual'), array('ile'))
-		->fullTotal()
-    ->lineTotal()
-    ->fetch();
-	sheet("session_rxqual_bcch",$data);
+
+	}
+	
+	if ($_SERVER["QUERY_STRING"]=="tym") {
+		print "<h2> Analyzed data dump</h2>";@flush();@ob_end_flush();
+		$recordset=sq_query("SELECT * FROM tymczasowa;");
+		sheet("analyzed",$recordset);
+		print "<a href='db\dupa.xlsx'> open analyzed records excel file</a>";
+		jr_xls_save($phpXls,'db\dupa.xlsx');
+
+	}
+
+	if ($_SERVER["QUERY_STRING"]=="all") {
+		print "<h2> Full parsed data dump </h2>";@flush();@ob_end_flush();
+		$recordset=sq_query("SELECT * FROM pelna;");
+		sheet("parsed",$recordset);
+		print "<a href='db\dupa.xlsx'> open parsed DUMP data	 excel file</a>";
+		jr_xls_save($phpXls,'db\dupa.xlsx');
+	}
+
+	if ($_SERVER["QUERY_STRING"]=="tymc") {
+		print "<h2> Analyzed data dump</h2>";@flush();@ob_end_flush();
+		$recordset=sq_query("SELECT * FROM tymczasowa;");
+		file_put_contents ('db\dupa.csv', sheet("avg_tch",$recordset,";"));
+		print "<a href='db\dupa.csv'> open analyzed records excel file</a>";
+
+	}
+
+	if ($_SERVER["QUERY_STRING"]=="allc") {
+		print "<h2> Full parsed data dump </h2>";@flush();@ob_end_flush();
+		$recordset=sq_query("SELECT * FROM pelna;");
+		file_put_contents ('db\dupa.csv', sheet("avg_tch",$recordset,";"));
+		print "<a href='db\dupa.csv'> open parsed DUMP data	 excel file</a>";
+	}
+
+
+	
+}
     
-  $recordset=sq_query("SELECT * FROM session_rxqual_tch");
-	$data = Pivot::factory($recordset)
-    ->pivotOn(array('cab','session','tch'))
-    ->addColumn(array('rxqual'), array('ile'))
-		->fullTotal()
-    ->lineTotal()
-
-    ->fetch();  
-	sheet("session_rxqual_tch",$data);
-    
-jr_xls_save($phpXls,'dupa.xlsx');
-
-print "<hr /><a href='index.php'>Back</a>";
+	print "<hr /><a href='index.php'>Back</a>";
 
 ?>
 <script>
